@@ -1,0 +1,571 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>test.test_data &#8212; GEA v.0.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/pyramid.css" />
+    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/jquery.js"></script>
+    <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<!--[if lte IE 6]>
+<link rel="stylesheet" href="../../_static/ie6.css" type="text/css" media="screen" charset="utf-8" />
+<![endif]-->
+
+  </head><body>
+
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">GEA v.0.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">test.test_data</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for test.test_data</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">.. module:: test.test_data</span>
+<span class="sd">   :synopsis: TBD</span>
+
+<span class="sd">.. moduleauthor:: (C) Capgemini Engineering - Hybrid Intelligence 2022</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">unittest</span>
+
+<span class="kn">import</span> <span class="nn">src.model_data_factory</span>
+<span class="kn">from</span> <span class="nn">src.utils</span> <span class="kn">import</span> <span class="n">initialize_logger</span><span class="p">,</span> <span class="n">list_to_reason</span>
+
+<span class="n">path_logger</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="vm">__file__</span><span class="p">),</span> <span class="s1">&#39;..//reports//logs//&#39;</span><span class="p">)</span>
+<span class="n">logger_object</span> <span class="o">=</span> <span class="n">initialize_logger</span><span class="p">(</span><span class="n">path_logger</span> <span class="o">+</span> <span class="s1">&#39;test_data_log&#39;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="DataTest"><a class="viewcode-back" href="../../index.html#test.test_data.DataTest">[docs]</a><span class="k">class</span> <span class="nc">DataTest</span><span class="p">(</span><span class="n">unittest</span><span class="o">.</span><span class="n">TestCase</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    *Data Test*</span>
+
+<span class="sd">    This class defines the unitary test for the input data instance of scheduler</span>
+
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__tearDown</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        *Tear Down*</span>
+
+<span class="sd">        It evaluates the result of the current test and  if error or failure occurs a message is logged.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># get test result</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;_outcome&#39;</span><span class="p">):</span>  <span class="c1"># python 3.4+</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">defaultTestResult</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_feedErrorsToResult</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_outcome</span><span class="o">.</span><span class="n">errors</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>  <span class="c1"># python 3.2 - 3.3 or 3.0 - 3.1 and 2.7</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;_outcomeForDoCleanups&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_resultForDoCleanups</span><span class="p">)</span>
+
+        <span class="n">error</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">list_to_reason</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">errors</span><span class="p">)</span>
+        <span class="n">failure</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">list_to_reason</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">failures</span><span class="p">)</span>
+        <span class="n">ok</span> <span class="o">=</span> <span class="ow">not</span> <span class="n">error</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">failure</span>
+
+        <span class="c1"># report error / failure</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">ok</span><span class="p">:</span>
+            <span class="n">_</span><span class="p">,</span> <span class="n">text</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;ERROR&#39;</span><span class="p">,</span> <span class="n">error</span><span class="p">)</span> <span class="k">if</span> <span class="n">error</span> <span class="k">else</span> <span class="p">(</span><span class="s1">&#39;FAIL&#39;</span><span class="p">,</span> <span class="n">failure</span><span class="p">)</span>
+            <span class="n">message</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">text</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">:]</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">x</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">)][</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">logger_object</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Test failed! &#39;</span> <span class="o">+</span> <span class="n">message</span><span class="p">)</span>
+
+<div class="viewcode-block" id="DataTest.test_data_input"><a class="viewcode-back" href="../../index.html#test.test_data.DataTest.test_data_input">[docs]</a>    <span class="k">def</span> <span class="nf">test_data_input</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        *Test Data Input*</span>
+
+<span class="sd">        Test if some input data instances are feasible plant configuration for the scheduler engine</span>
+
+<span class="sd">        Input data instances:</span>
+<span class="sd">                * example_test_1.json</span>
+<span class="sd">                * example_test_2.json</span>
+<span class="sd">                * example_test_3.json</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">data_filename</span> <span class="o">=</span> <span class="s1">&#39;data/example_test.json&#39;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">src</span><span class="o">.</span><span class="n">model_data_factory</span><span class="o">.</span><span class="n">ModelDataFactory</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">request_path</span><span class="o">=</span><span class="n">data_filename</span><span class="p">)</span>
+
+        <span class="c1">#############################################</span>
+        <span class="c1"># Schedule configuration data entry methods</span>
+        <span class="c1">#############################################</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">schedule_config</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">get_schedule_configs</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">schedule_config_expected_dict_keys</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;objective&#39;</span><span class="p">,</span> <span class="s1">&#39;product_order&#39;</span><span class="p">,</span> <span class="s1">&#39;plant_calendar&#39;</span><span class="p">,</span>
+                                                   <span class="s1">&#39;starting_date&#39;</span><span class="p">,</span> <span class="s1">&#39;max_time_horizon&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">schedule_config_expected_dict_keys_type</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">schedule_config_product_order_expected_items_type</span> <span class="o">=</span> <span class="nb">str</span>
+
+        <span class="n">logger_object</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Checking that the schedule configurations come in a list...&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__check_schedule_config_is_list</span><span class="p">()</span>
+        <span class="n">logger_object</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;OK!&#39;</span><span class="p">)</span>
+
+        <span class="n">logger_object</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Checking the number of schedule configurations...&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__check_number_of_schedule_config</span><span class="p">()</span>
+        <span class="n">logger_object</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;OK!&#39;</span><span class="p">)</span>
+
+        <span class="n">logger_object</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Checking that the list of schedule configurations contains only dictionaries...&#39;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">schedule_config</span><span class="p">)):</span>  <span class="c1"># run through all elements in the list of schedule config</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__check_schedule_config_type</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+        <span class="n">logger_object</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;OK!&#39;</span><span class="p">)</span>
+
+        <span class="n">logger_object</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Checking that the dictionaries in schedule configurations have the expected keys...&#39;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">schedule_config</span><span class="p">)):</span>  <span class="c1"># run through all elements in the list of schedule config</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__check_schedule_config_dict_keys</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+        <span class="n">logger_object</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;OK!&#39;</span><span class="p">)</span>
+
+        <span class="n">logger_object</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Checking that all values in the schedule configurations dictionaries are not empty...&#39;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">schedule_config</span><span class="p">)):</span>  <span class="c1"># run through all elements in the list of schedule config</span>
+            <span class="c1"># run through all keys in the current dict (schedule config)</span>
+            <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">schedule_config_expected_dict_keys</span><span class="p">:</span>
+                <span class="c1"># values in the dictionary (schedule config) can be strings or lists</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">schedule_config</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">key</span><span class="p">],</span> <span class="nb">list</span><span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">__check_not_empty_values_in_list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">schedule_config</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">key</span><span class="p">])</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">__check_not_empty_value</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">schedule_config</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">key</span><span class="p">])</span>
+        <span class="n">logger_object</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;OK!&#39;</span><span class="p">)</span>
+
+        <span class="n">logger_object</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Checking that the dictionaries in schedule configurations &#39;</span>
+                           <span class="s1">&#39;have the expected type of values...&#39;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">schedule_config</span><span class="p">)):</span>  <span class="c1"># run through all elements in the list of schedule config</span>
+            <span class="c1"># run through all keys in the current dict (schedule config)</span>
+            <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">schedule_config_expected_dict_keys</span><span class="p">)):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">__check_schedule_config_dict_values_type</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span>
+        <span class="n">logger_object</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;OK!&#39;</span><span class="p">)</span>
+
+        <span class="n">logger_object</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Checking that the product order list in schedule configurations has only strings...&#39;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">schedule_config</span><span class="p">)):</span>  <span class="c1"># run through all elements in the list of schedule config</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__check_schedule_config_product_order_type</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+        <span class="n">logger_object</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;OK!&#39;</span><span class="p">)</span>
+
+        <span class="c1">#############################################</span>
+        <span class="c1"># Equipments data entry methods</span>
+        <span class="c1">#############################################</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">equipments</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">get_equipments</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">equipments_expected_dict_keys</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">,</span> <span class="s1">&#39;id&#39;</span><span class="p">,</span> <span class="s1">&#39;input&#39;</span><span class="p">,</span> <span class="s1">&#39;output&#39;</span><span class="p">,</span>
+                                              <span class="s1">&#39;volume&#39;</span><span class="p">,</span> <span class="s1">&#39;volume_to_empty&#39;</span><span class="p">,</span> <span class="s1">&#39;subprocess&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">equipments_expected_dict_keys_type</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">list</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">equipments_subprocess_expected_items_type</span> <span class="o">=</span> <span class="nb">str</span>
+
+        <span class="n">logger_object</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Checking that the equipments come in a list...&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__check_equipments_is_list</span><span class="p">()</span>
+        <span class="n">logger_object</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;OK!&#39;</span><span class="p">)</span>
+
+        <span class="n">logger_object</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Checking the number of equipments...&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__check_number_of_equipments</span><span class="p">()</span>
+        <span class="n">logger_object</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;OK!&#39;</span><span class="p">)</span>
+
+        <span class="n">logger_object</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Checking that the list of equipments contains only dictionaries...&#39;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">equipments</span><span class="p">)):</span>  <span class="c1"># run through all elements in the list of equipments</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__check_equipments_type</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+        <span class="n">logger_object</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;OK!&#39;</span><span class="p">)</span>
+
+        <span class="n">logger_object</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Checking that the dictionaries in equipments have the expected keys...&#39;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">equipments</span><span class="p">)):</span>  <span class="c1"># run through all elements in the list of equipments</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__check_equipments_dict_keys</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+        <span class="n">logger_object</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;OK!&#39;</span><span class="p">)</span>
+
+        <span class="n">logger_object</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Checking that all values in the equipments dictionaries are not empty...&#39;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">equipments</span><span class="p">)):</span>  <span class="c1"># run through all elements in the list of equipments</span>
+            <span class="c1"># run through all keys in the current dict (equipment)</span>
+            <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">equipments_expected_dict_keys</span><span class="p">:</span>
+                <span class="c1"># values in the dictionary (equipment) can be strings, lists or integers</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">equipments</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">key</span><span class="p">],</span> <span class="nb">list</span><span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">__check_not_empty_values_in_list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">equipments</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">key</span><span class="p">])</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">__check_not_empty_value</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">equipments</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">key</span><span class="p">])</span>
+        <span class="n">logger_object</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;OK!&#39;</span><span class="p">)</span>
+
+        <span class="n">logger_object</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Checking that the dictionaries in equipments have the expected type of values...&#39;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">equipments</span><span class="p">)):</span>  <span class="c1"># run through all elements in the list of equipments</span>
+            <span class="c1"># run through all keys in the current dict (equipment)</span>
+            <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">equipments_expected_dict_keys</span><span class="p">)):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">__check_equipments_dict_values_type</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span>
+        <span class="n">logger_object</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;OK!&#39;</span><span class="p">)</span>
+
+        <span class="n">logger_object</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Checking that the subprocess list in equipments has only strings...&#39;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">equipments</span><span class="p">)):</span>  <span class="c1"># run through all elements in the list of equipments</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__check_equipments_subprocess_type</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+        <span class="n">logger_object</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;OK!&#39;</span><span class="p">)</span>
+
+        <span class="c1">#############################################</span>
+        <span class="c1"># Workflows data entry methods</span>
+        <span class="c1">#############################################</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">workflows</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">get_workflow_graph</span><span class="p">()</span>
+
+        <span class="n">logger_object</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Checking that the workflows come in a list...&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__check_workflows_is_list</span><span class="p">()</span>
+        <span class="n">logger_object</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;OK!&#39;</span><span class="p">)</span>
+        <span class="n">logger_object</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Checking the number of workflows...&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__check_number_of_workflows</span><span class="p">()</span>
+        <span class="n">logger_object</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;OK!&#39;</span><span class="p">)</span>
+        <span class="n">logger_object</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Checking that the list of workflows contains only dictionaries...&#39;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">workflows</span><span class="p">)):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__check_workflows_type</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+        <span class="n">logger_object</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;OK!&#39;</span><span class="p">)</span>
+
+        <span class="c1">#############################################</span>
+        <span class="c1"># Products data entry methods</span>
+        <span class="c1">#############################################</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">products</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">get_products</span><span class="p">()</span>
+
+        <span class="n">logger_object</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Checking that the products come in a list...&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__check_products_is_list</span><span class="p">()</span>
+        <span class="n">logger_object</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;OK!&#39;</span><span class="p">)</span>
+        <span class="n">logger_object</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Checking the number of products...&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__check_number_of_products</span><span class="p">()</span>
+        <span class="n">logger_object</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;OK!&#39;</span><span class="p">)</span>
+        <span class="n">logger_object</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Checking that the list of products contains only dictionaries...&#39;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">products</span><span class="p">)):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__check_products_type</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+        <span class="n">logger_object</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;OK!&#39;</span><span class="p">)</span>
+
+        <span class="c1">#############################################</span>
+        <span class="c1"># Demands data entry methods</span>
+        <span class="c1">#############################################</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">demands</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">get_demands</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">demands_expected_dict_keys</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;product_name&#39;</span><span class="p">,</span> <span class="s1">&#39;product_id&#39;</span><span class="p">,</span> <span class="s1">&#39;due_date&#39;</span><span class="p">,</span> <span class="s1">&#39;amount&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">demands_expected_dict_keys_type</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span>
+
+        <span class="n">logger_object</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Checking that the demands come in a list...&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__check_demands_is_list</span><span class="p">()</span>
+        <span class="n">logger_object</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;OK!&#39;</span><span class="p">)</span>
+        <span class="n">logger_object</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Checking the number of demands...&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__check_number_of_demands</span><span class="p">()</span>
+        <span class="n">logger_object</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;OK!&#39;</span><span class="p">)</span>
+        <span class="n">logger_object</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Checking that the list of demands contains only dictionaries...&#39;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">demands</span><span class="p">)):</span>  <span class="c1"># run through all elements in the list of demands</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__check_demands_type</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+        <span class="n">logger_object</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;OK!&#39;</span><span class="p">)</span>
+
+        <span class="n">logger_object</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Checking that the dictionaries in demands have the expected keys...&#39;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">demands</span><span class="p">)):</span>  <span class="c1"># run through all elements in the list of demands</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__check_demands_dict_keys</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+        <span class="n">logger_object</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;OK!&#39;</span><span class="p">)</span>
+
+        <span class="n">logger_object</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Checking that all values in the demands dictionaries are not empty...&#39;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">demands</span><span class="p">)):</span>  <span class="c1"># run through all elements in the list of demands</span>
+            <span class="c1"># run through all keys in the current dict (demand)</span>
+            <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">demands_expected_dict_keys</span><span class="p">:</span>
+                <span class="c1"># values in the dictionary (demand) can be strings or ints</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">__check_not_empty_value</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">demands</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">key</span><span class="p">])</span>
+        <span class="n">logger_object</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;OK!&#39;</span><span class="p">)</span>
+
+        <span class="n">logger_object</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Checking that the dictionaries in demands have the expected type of values...&#39;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">demands</span><span class="p">)):</span>  <span class="c1"># run through all elements in the list of demands</span>
+            <span class="c1"># run through all keys in the current dict (demand)</span>
+            <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">demands_expected_dict_keys</span><span class="p">)):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">__check_demands_dict_values_type</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span>
+        <span class="n">logger_object</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;OK!&#39;</span><span class="p">)</span>
+
+        <span class="c1">#############################################</span>
+        <span class="c1"># CIPs data entry methods</span>
+        <span class="c1">#############################################</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cips</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">get_cips</span><span class="p">()</span>
+
+        <span class="n">logger_object</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Checking that the CIPs come in a list...&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__check_cips_is_list</span><span class="p">()</span>
+        <span class="n">logger_object</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;OK!&#39;</span><span class="p">)</span>
+        <span class="n">logger_object</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Checking the number of CIPs...&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__check_number_of_cips</span><span class="p">()</span>
+        <span class="n">logger_object</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;OK!&#39;</span><span class="p">)</span>
+        <span class="n">logger_object</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Checking that the list of CIPs contains only dictionaries...&#39;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cips</span><span class="p">)):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__check_cips_type</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+        <span class="n">logger_object</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;OK!&#39;</span><span class="p">)</span>
+
+        <span class="n">logger_object</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;All tests passed!&#39;</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">__check_schedule_config_is_list</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        *check schedule config is list*</span>
+<span class="sd">        Test...</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">schedule_config</span><span class="p">),</span> <span class="nb">list</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__check_number_of_schedule_config</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        *Check the number of schedule configurations*</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertTrue</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">schedule_config</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__check_schedule_config_type</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        *Check schedule config*</span>
+<span class="sd">        CHeck that the list of schedule configurations contains data of type dict</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">schedule_config</span><span class="p">[</span><span class="n">i</span><span class="p">]),</span> <span class="nb">dict</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__check_schedule_config_dict_keys</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        *check schedule config dict keys*</span>
+<span class="sd">        Check that the dictionaries in the schedule configurations list have the expected keys</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertTrue</span><span class="p">(</span><span class="nb">all</span><span class="p">(</span><span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">schedule_config</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+                            <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">schedule_config_expected_dict_keys</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">__check_schedule_config_dict_values_type</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        *check schedule config dict values type*</span>
+<span class="sd">        Check that the dictionaries in schedule configurations have the expected type of values</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">schedule_config</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="bp">self</span><span class="o">.</span><span class="n">schedule_config_expected_dict_keys</span><span class="p">[</span><span class="n">j</span><span class="p">]]),</span>
+                         <span class="bp">self</span><span class="o">.</span><span class="n">schedule_config_expected_dict_keys_type</span><span class="p">[</span><span class="n">j</span><span class="p">])</span>
+
+    <span class="k">def</span> <span class="nf">__check_schedule_config_product_order_type</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        **Check product order type*</span>
+<span class="sd">        Check that the product order list in schedule configurations has only strings</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertTrue</span><span class="p">(</span><span class="nb">all</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">schedule_config_product_order_expected_items_type</span><span class="p">)</span>
+                            <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">schedule_config</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;product_order&#39;</span><span class="p">]))</span>
+
+    <span class="k">def</span> <span class="nf">__check_equipments_is_list</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check that the equipments come in a list</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">equipments</span><span class="p">),</span> <span class="nb">list</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__check_number_of_equipments</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check the number of equipments</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertTrue</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">equipments</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__check_equipments_type</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check that the list of equipments contains data of type dict</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">equipments</span><span class="p">[</span><span class="n">i</span><span class="p">]),</span> <span class="nb">dict</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__check_equipments_dict_keys</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check that the dictionaries in the equipments list have the expected keys</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertTrue</span><span class="p">(</span><span class="nb">all</span><span class="p">(</span><span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">equipments</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+                            <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">equipments_expected_dict_keys</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">__check_equipments_dict_values_type</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check that the dictionaries in equipments have the expected type of values</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">equipments</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="bp">self</span><span class="o">.</span><span class="n">equipments_expected_dict_keys</span><span class="p">[</span><span class="n">j</span><span class="p">]]),</span>
+                         <span class="bp">self</span><span class="o">.</span><span class="n">equipments_expected_dict_keys_type</span><span class="p">[</span><span class="n">j</span><span class="p">])</span>
+
+    <span class="k">def</span> <span class="nf">__check_equipments_subprocess_type</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check that the subprocess list in equipments has only strings</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertTrue</span><span class="p">(</span><span class="nb">all</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">equipments_subprocess_expected_items_type</span><span class="p">)</span>
+                            <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">equipments</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;subprocess&#39;</span><span class="p">]))</span>
+
+    <span class="k">def</span> <span class="nf">__check_workflows_is_list</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check that the workflows come in a list</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">workflows</span><span class="p">),</span> <span class="nb">list</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__check_number_of_workflows</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check the number of workflows</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertTrue</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">workflows</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__check_workflows_type</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check that the list of workflows contains data of type dict</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">workflows</span><span class="p">[</span><span class="n">i</span><span class="p">]),</span> <span class="nb">dict</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__check_products_is_list</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check that the products come in a list</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">products</span><span class="p">),</span> <span class="nb">list</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__check_number_of_products</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check the number of products</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertTrue</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">products</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__check_products_type</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check that the list of products contains data of type dict</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">products</span><span class="p">[</span><span class="n">i</span><span class="p">]),</span> <span class="nb">dict</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__check_demands_is_list</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check that the demands come in a list</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">demands</span><span class="p">),</span> <span class="nb">list</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__check_number_of_demands</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check the number of demands</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertTrue</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">demands</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__check_demands_type</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check that the list of demands contains data of type dict</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">demands</span><span class="p">[</span><span class="n">i</span><span class="p">]),</span> <span class="nb">dict</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__check_demands_dict_keys</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check that the dictionaries in the demands list have the expected keys</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertTrue</span><span class="p">(</span><span class="nb">all</span><span class="p">(</span><span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">demands</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+                            <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">demands_expected_dict_keys</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">__check_demands_dict_values_type</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check that the dictionaries in demands have the expected type of values</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">demands</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="bp">self</span><span class="o">.</span><span class="n">demands_expected_dict_keys</span><span class="p">[</span><span class="n">j</span><span class="p">]]),</span>
+                         <span class="bp">self</span><span class="o">.</span><span class="n">demands_expected_dict_keys_type</span><span class="p">[</span><span class="n">j</span><span class="p">])</span>
+
+    <span class="k">def</span> <span class="nf">__check_cips_is_list</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check that the CIPs come in a list</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cips</span><span class="p">),</span> <span class="nb">list</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__check_number_of_cips</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check the number of CIPs</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertTrue</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cips</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__check_cips_type</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check that the list of CIPs contains data of type dict</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cips</span><span class="p">[</span><span class="n">i</span><span class="p">]),</span> <span class="nb">dict</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__check_not_empty_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check that a value is not empty</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertTrue</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__check_not_empty_values_in_list</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">list_of_values</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check that a list has no empty items</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertTrue</span><span class="p">(</span><span class="nb">all</span><span class="p">(</span><span class="n">value</span> <span class="k">for</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">list_of_values</span><span class="p">))</span>
+
+<div class="viewcode-block" id="DataTest.test_connectivity"><a class="viewcode-back" href="../../index.html#test.test_data.DataTest.test_connectivity">[docs]</a>    <span class="k">def</span> <span class="nf">test_connectivity</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        *Test Connectivity of the plant configuration*</span>
+
+<span class="sd">        Test if the equipment of the plant configuration is connected to the rest of the equipment of the workflow</span>
+<span class="sd">        &quot;&quot;&quot;</span></div>
+
+<div class="viewcode-block" id="DataTest.test_consistency"><a class="viewcode-back" href="../../index.html#test.test_data.DataTest.test_consistency">[docs]</a>    <span class="k">def</span> <span class="nf">test_consistency</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        *Test consistency of the workflows*</span>
+
+<span class="sd">        Test if the workflows defined are consistent</span>
+<span class="sd">        &quot;&quot;&quot;</span></div>
+
+<div class="viewcode-block" id="DataTest.test_feasible_time_horizon"><a class="viewcode-back" href="../../index.html#test.test_data.DataTest.test_feasible_time_horizon">[docs]</a>    <span class="k">def</span> <span class="nf">test_feasible_time_horizon</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        *Test feasible time horizon*</span>
+
+<span class="sd">        Test if the time horizon provided is feasible to allocate the longest schedule</span>
+<span class="sd">        &quot;&quot;&quot;</span></div></div>
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">GEA v.0.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">test.test_data</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2022, Capgemini Engineering - Hybrid Intelligence.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 4.3.1.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,208 @@
+{
+  "ScheduleConfig": [
+    {
+      "objective": "makespan",
+      "product_order": ["product_A", "product_B"],
+      "plant_calendar": "24-7",
+      "starting_date": "21/02/2022",
+      "max_time_horizon": "01/06/2022"
+    }
+  ],
+  "Equipments": [
+    {
+      "name": "Crystallization tank 241TA1100",
+      "id": "123ABC",
+      "input": 1,
+      "output": 1,
+      "volume": 15000,
+      "volume_to_empty": null,
+      "subprocess": ["Filling","Crystallizing","Holding","Emptying"]
+    },
+    {
+      "name": "Tank A",
+      "id": "123CDE",
+      "input": 1,
+      "output": 1,
+      "volume": 30000,
+      "volume_to_empty": null,
+      "subprocess": ["Holding", "Emptying"]
+    },
+    {
+      "name": "Tank B",
+      "id": "123EFG",
+      "input": 1,
+      "output": 1,
+      "volume": 30000,
+      "volume_to_empty": null,
+      "subprocess": ["Filling","Holding"]
+    }
+  ],
+  "WorkFlows": [
+    {
+      "workflow_name": "Transfer from tank A to tank B",
+      "workflow_id" : "3947WD",
+      "input_product": ["product_A"],
+      "output_product": ["product_B"],
+      "nodes": [
+        {
+          "name": "Tank A",
+          "id": "123CDE",
+          "subprocess": "Holding",
+          "duration_type": "variable",
+          "duration": null
+        },
+        {
+          "name": "Tank A",
+          "id": "123CDE",
+          "subprocess": "Emptying",
+          "duration_type": "fixed",
+          "duration": 0
+        },
+        {
+          "name": "Tank B",
+          "id": "123EFG",
+          "subprocess": "Filling",
+          "duration_type": "fixed",
+          "duration": 0
+        },
+        {
+          "name": "Tank B",
+          "id": "123EFG",
+          "subprocess": "Holding",
+          "duration_type": "variable",
+          "duration": null
+        }
+      ],
+      "edges": [
+        {
+          "name_origin": "Tank A",
+          "id_origin": "123CDE",
+          "subprocess_origin": "Holding",
+          "name_destination": "Tank A",
+          "id_destination": "123CDE",
+          "subprocess_destination": "Emptying",
+          "connection": "FS",
+          "delay": 0,
+          "product_origin": "product A",
+          "product_id_origin": 1,
+          "product_destination": "product A",
+          "product_id_destination": 1,
+          "flow": false,
+          "flowrate": null
+        },
+        {
+          "name_origin": "Tank A",
+          "id_origin": "123CDE",
+          "subprocess_origin": "Emptying",
+          "name_destination": "Tank B",
+          "id_destination": "123EFG",
+          "subprocess_destination": "Filling",
+          "connection": "SS",
+          "delay": 0,
+          "product_origin": "product A",
+          "product_id_origin": 1,
+          "product_destination": "product A",
+          "product_id_destination": 1,
+          "flow": true,
+          "flowrate": 1200
+        },
+        {
+          "name_origin": "Tank B",
+          "id_origin": "123EFG",
+          "subprocess_origin": "Holding",
+          "name_destination": "Tank B",
+          "id_destination": "123EFG",
+          "subprocess_destination": "Emptying",
+          "connection": "FS",
+          "delay": 0,
+          "product_origin": "product A",
+          "product_id_origin": 1,
+          "product_destination": "product A",
+          "product_id_destination": 1,
+          "flow": false,
+          "flowrate": null
+        }
+      ]
+    }
+  ],
+  "Products": [
+    {
+      "name": "product A",
+      "id": 1,
+      "compatibility_list": [
+        {
+          "name": "product A",
+          "id": 1,
+          "cleaning_duration": "no"
+        },
+        {
+          "name": "product B",
+          "id": 2,
+          "cleaning_duration": "short"
+        }
+      ]
+    },
+    {
+      "name": "product B",
+      "id": 2,
+      "compatibility_list": [
+        {
+          "name": "product A",
+          "id": 1,
+          "cleaning_duration": "long"
+        },
+        {
+          "name": "product B",
+          "id": 2,
+          "cleaning_duration": "no"
+        }
+      ]
+    }
+  ],
+  "Demands": [
+    {
+      "product_name": "product B",
+      "product_id": 2,
+      "due_date": "20/02/2022",
+      "amount": 15000
+    }
+  ],
+  "CIPs": [
+    {
+      "station_name": "station 1",
+      "station_id": "ABC",
+      "lines": [
+        {
+          "line_name": "line 1",
+          "line_id": "UIOPAS",
+          "equipment_list": [
+            {
+              "name": "Tank A",
+              "id": "123CDE"
+            },
+            {
+              "name": "Tank B",
+              "id": "123EFG"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "station_name": "station 2",
+      "station_id": "CDE",
+      "lines": [
+        {
+          "line_name": "line 1",
+          "line_id": "QWERTY",
+          "equipment_list": [
+            {
+              "name": "Crystallization tank 241TA1100",
+              "id": "123ABC"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

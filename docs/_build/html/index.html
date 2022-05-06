@@ -1,0 +1,467 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+    <title>GEA Schedeus - Scheduler Documentation - V.0.1 &#8212; GEA v.0.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/pyramid.css" />
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<!--[if lte IE 6]>
+<link rel="stylesheet" href="_static/ie6.css" type="text/css" media="screen" charset="utf-8" />
+<![endif]-->
+
+  </head><body>
+
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="#">GEA v.0.1 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">GEA Schedeus - Scheduler Documentation - V.0.1</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="gea-schedeus-scheduler-documentation-v-0-1">
+<h1>GEA Schedeus - Scheduler Documentation - V.0.1<a class="headerlink" href="#gea-schedeus-scheduler-documentation-v-0-1" title="Permalink to this headline">¶</a></h1>
+<a class="reference internal image-reference" href="_images/logos.png"><img alt="_images/logos.png" src="_images/logos.png" style="width: 500px;" /></a>
+<p>The scheduler optimization module is formulated as a Mixed-Integer Programming problem (MIP) using the framework ORTools and Python as programming
+language.</p>
+<div class="math notranslate nohighlight">
+\[min_{x \in \mathbb{R}, y \in (0,1)} \ f(x,y)\]</div>
+<div class="math notranslate nohighlight">
+\[st: \ g(x,y) &lt;=0\]</div>
+<p>The module evaluates whether a certain plant configuration is able to satisfy a certain product demand within a given time frame (both also given as an input parameter)
+according to some solution criterion to be clarified below.</p>
+<p>Within the  scheduler module, an initial pre-check (input data analyzer) is executed before starting the scheduling problem to identify
+possible data inconsistencies and will communicate the possible warnings or errors founded in the output of the scheduler.</p>
+<p>If there exists a feasible schedule for the input plant configuration, the scheduler provides a schedule-type output, which will later be used
+to construct one Gantt chart (the construction is out of this scope).</p>
+<p>If no feasible schedule exists, then the relaxed schedule-type output is provided, and the list of the equipment involved with their utilization
+ratios will be provided. This will be obtained  by relaxing certain constraints until a feasible problem can be reached to follow the same procedure
+as with bottleneck identification.</p>
+<p>If the input data instance is not consistent (exist errors) then no schedule-type output is provided. The error message will indicate clearly the
+reason of failure.</p>
+<p>The output will contain a list of possible warnings and error (data inconsistencies) messages.</p>
+<p>This version includes:</p>
+<ul class="simple">
+<li><p>Batch/continuous processes.</p></li>
+<li><p>Already running equipment.</p></li>
+<li><p>Multi-product/Multi-workflows.</p></li>
+</ul>
+<p>This version DOES NOT includes:</p>
+<ul class="simple">
+<li><p>CIPs.</p></li>
+<li><p>Product Order.</p></li>
+<li><p>Clusters.</p></li>
+<li><p>Split Workflows.</p></li>
+</ul>
+</section>
+<section id="scheduler-module-documentation">
+<h1>Scheduler Module Documentation<a class="headerlink" href="#scheduler-module-documentation" title="Permalink to this headline">¶</a></h1>
+<div class="toctree-wrapper compound">
+</div>
+<section id="module-src.model_data">
+<span id="model-data"></span><h2>Model Data<a class="headerlink" href="#module-src.model_data" title="Permalink to this headline">¶</a></h2>
+<span class="target" id="module-0"></span><dl class="py class">
+<dt class="sig sig-object py" id="src.model_data.ModelData">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.model_data.</span></span><span class="sig-name descname"><span class="pre">ModelData</span></span><a class="reference internal" href="_modules/src/model_data.html#ModelData"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.model_data.ModelData" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>Model Data</em></p>
+<p>This class defines the data model of the input instance. It contains the main attributes that the scheduler
+requires.It also contain the different methods required to work with the attributes.</p>
+<blockquote>
+<div><dl>
+<dt>Attributes:</dt><dd><p>schedule_configs:     Dictionary that contain the schedule configuration:</p>
+<blockquote>
+<div><p>objective:          objective to consider (1:makespan, 2:just-in-time). String.</p>
+<p>product_order:      order of the products to be scheduled. List:</p>
+<p>starting_date:      Starting date to consider in the schedule. Timestamp (dd-mm-yyyy hh:mm:ss).</p>
+<p>max_time_horizon:   Max. number of days to consider in the schedule. Integer.</p>
+<p>time_resolution:    Time resolution of the schedule (1-30 min). Integer</p>
+<p>plant_ID:    Identifier for the plant configuration. It wil be used for the schedule_ID. String</p>
+</div></blockquote>
+<p>equipment: Dictionary that contains the information of the equipment involved in the schedule.
+Each register is a equipment.</p>
+<blockquote>
+<div><p>equipment_ID: Identifier for the equipment.</p>
+<p>no_inputs:  Number of inputs.</p>
+<p>no_outputs: Number of outputs.</p>
+<p>batch_max: Maximum batch size.</p>
+<p>batch_min: Minimum batch size.</p>
+<p>calendar: Equipment_calendar. Working horus. format: [24,7].</p>
+</div></blockquote>
+<p>demand: Dictionary that contains the information of the product demand:</p>
+<blockquote>
+<div><p>product_ID: Identifier for th product. Is a list.</p>
+<p>due_data:   Dictionary that contain the due_date for each product.</p>
+<p>amount: Dictionaty that contain the quantity demanded for each product</p>
+</div></blockquote>
+<p>workflows: Dictionary that contains the information related to recipe/workflows:</p>
+<blockquote>
+<div><p>workflow_ID:    Identifier for the workflow.</p>
+<p>input_product:  Input product/s. [String].</p>
+<p>output_product: Ouput product/s. [String].</p>
+<p>recipe: Dictionary that contains the recipes (workflow graph)</p>
+<blockquote>
+<div><p>node: Dictionary that contains:</p>
+<blockquote>
+<div><p>node_ID</p>
+<p>subprocess</p>
+<p>duration_type</p>
+<p>duration</p>
+</div></blockquote>
+<p>edge:   Dictionary that contains:</p>
+<blockquote>
+<div><p>node_origin_ID</p>
+<p>node_destination_ID</p>
+<p>subprocess_destination</p>
+<p>subprocess_origin</p>
+<p>product_origin</p>
+<p>product_destination</p>
+<p>flow_rate</p>
+<p>delay</p>
+<p>connection: Type of connection (SS, FF, FS, SF)</p>
+</div></blockquote>
+</div></blockquote>
+</div></blockquote>
+</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+</section>
+<section id="module-src.scheduler_response">
+<span id="scheduler-response"></span><h2>Scheduler Response<a class="headerlink" href="#module-src.scheduler_response" title="Permalink to this headline">¶</a></h2>
+<span class="target" id="module-1"></span><dl class="py class">
+<dt class="sig sig-object py" id="src.scheduler_response.SchedulerResponse">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.scheduler_response.</span></span><span class="sig-name descname"><span class="pre">SchedulerResponse</span></span><a class="reference internal" href="_modules/src/scheduler_response.html#SchedulerResponse"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.scheduler_response.SchedulerResponse" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>Scheduler Response</em></p>
+<p>This class defines the schedule data class of the scheduler engine. It contains the necessary information to
+build the schedule gantt chart.</p>
+<blockquote>
+<div><dl>
+<dt>Attributes:</dt><dd><p>schedule_status:         Indicate the status of the schedule (feasible, not_feasible or not_consistent)</p>
+<p>equipment_unfeasible:    It is a dictionary with all the equipment involved in the schedule with the
+utilization ratios (UR).</p>
+<p>status_data_analyzer:    It is a dictionary with warning and errors messages</p>
+<p>schedule_ID:             Identifier for the schedule (string)</p>
+<p>schedule_gantt:          Dictionary that contains:</p>
+<blockquote>
+<div><p>equipment_ID:        Equipment involved</p>
+<p>workflow_ID:         Workflow associated</p>
+<p>product_order:       Product Order associated</p>
+<p>work_order:          Work Order associated</p>
+<p>job_order:           job_order associated</p>
+<p>product:             Product associated</p>
+<p>subprocess:          Subprocess</p>
+<p>start:               Start timestep</p>
+<p>end:                 End timestep</p>
+<p>volume:              Quantity of product</p>
+</div></blockquote>
+</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+</section>
+<section id="module-src.engine">
+<span id="scheduler-engine"></span><h2>Scheduler Engine<a class="headerlink" href="#module-src.engine" title="Permalink to this headline">¶</a></h2>
+<span class="target" id="module-2"></span><dl class="py class">
+<dt class="sig sig-object py" id="src.engine.SchedulerEngine">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.engine.</span></span><span class="sig-name descname"><span class="pre">SchedulerEngine</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#src.model_data.ModelData" title="src.model_data.ModelData"><span class="pre">src.model_data.ModelData</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/engine.html#SchedulerEngine"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.engine.SchedulerEngine" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>Scheduler Engine</em></p>
+<p>This class defines the scheduler optimization engine.</p>
+<blockquote>
+<div><dl>
+<dt>Attributes:</dt><dd><p>results:     Results of the pyomo execution.</p>
+<p>name:        Name of the model.</p>
+<p>data:        Model data instance.</p>
+<p>response:    Scheduler instance.</p>
+</dd>
+</dl>
+</div></blockquote>
+<dl class="py method">
+<dt class="sig sig-object py" id="src.engine.SchedulerEngine.execute">
+<span class="sig-name descname"><span class="pre">execute</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/engine.html#SchedulerEngine.execute"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.engine.SchedulerEngine.execute" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>Execute</em></p>
+<p>This method execute the engine module which comprise the following sub-methods:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Data Analyzer: Check the integrity of the input data instance.</p></li>
+<li><p>Build Model: Build the engine scheduler model.</p></li>
+<li><p>Solve: Solve the optimziation model.</p></li>
+<li><p>Build Solution: Invoke the scheduler data factory to build the schedule output solution</p></li>
+</ul>
+</div></blockquote>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-src.model_data_factory">
+<span id="model-data-factory"></span><h2>Model Data Factory<a class="headerlink" href="#module-src.model_data_factory" title="Permalink to this headline">¶</a></h2>
+<span class="target" id="module-3"></span><dl class="py class">
+<dt class="sig sig-object py" id="src.model_data_factory.ModelDataFactory">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.model_data_factory.</span></span><span class="sig-name descname"><span class="pre">ModelDataFactory</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/model_data_factory.html#ModelDataFactory"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.model_data_factory.ModelDataFactory" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>Model Data Factory</em></p>
+<p>This class creates an instance of the Model data class with the input of the scheduler engine.</p>
+<blockquote>
+<div><dl class="simple">
+<dt>Attributes:</dt><dd><p>request_path                 path or json file
+data                         model data class</p>
+</dd>
+</dl>
+</div></blockquote>
+<dl class="py method">
+<dt class="sig sig-object py" id="src.model_data_factory.ModelDataFactory.create">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">create</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/model_data_factory.html#ModelDataFactory.create"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.model_data_factory.ModelDataFactory.create" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>Create</em></p>
+<dl class="simple">
+<dt>This method creates an instance of the model data class with the input json file provided</dt><dd><dl class="simple">
+<dt>Attributes:</dt><dd><p>request_path:                 input json file</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-src.scheduler_response_factory">
+<span id="scheduler-response-factory"></span><h2>Scheduler Response Factory<a class="headerlink" href="#module-src.scheduler_response_factory" title="Permalink to this headline">¶</a></h2>
+<span class="target" id="module-4"></span><dl class="py class">
+<dt class="sig sig-object py" id="src.scheduler_response_factory.SchedulerResponseFactory">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.scheduler_response_factory.</span></span><span class="sig-name descname"><span class="pre">SchedulerResponseFactory</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#src.model_data.ModelData" title="src.model_data.ModelData"><span class="pre">src.model_data.ModelData</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/scheduler_response_factory.html#SchedulerResponseFactory"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.scheduler_response_factory.SchedulerResponseFactory" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>Scheduler Response Factory</em></p>
+<p>This class creates an instance of the Schedule Response class with the output of the scheduler engine.</p>
+<blockquote>
+<div><dl>
+<dt>Attributes:</dt><dd><p>response:                     scheduler data class.</p>
+<p>model:                        Scheduler engine class.</p>
+<p>data:                         model data class.</p>
+</dd>
+</dl>
+</div></blockquote>
+<dl class="py method">
+<dt class="sig sig-object py" id="src.scheduler_response_factory.SchedulerResponseFactory.create">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">create</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/scheduler_response_factory.html#SchedulerResponseFactory.create"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.scheduler_response_factory.SchedulerResponseFactory.create" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>Create</em></p>
+<p>This method creates an instance of the schedule response data class with the solution provided by the engine
+scheduler.</p>
+<blockquote>
+<div><dl class="simple">
+<dt>Attributes:</dt><dd><p>data:                 Receive the model data class of the schedule.</p>
+</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-src.utils">
+<span id="utils"></span><h2>Utils<a class="headerlink" href="#module-src.utils" title="Permalink to this headline">¶</a></h2>
+<span class="target" id="module-5"></span><dl class="py function">
+<dt class="sig sig-object py" id="src.utils.check_environment">
+<span class="sig-prename descclassname"><span class="pre">src.utils.</span></span><span class="sig-name descname"><span class="pre">check_environment</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/utils.html#check_environment"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.utils.check_environment" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>Check Environment</em></p>
+<p>Check if the python environment is correctly configured</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="src.utils.initialize_logger">
+<span class="sig-prename descclassname"><span class="pre">src.utils.</span></span><span class="sig-name descname"><span class="pre">initialize_logger</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/utils.html#initialize_logger"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.utils.initialize_logger" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>Initialize Logger</em></p>
+<p>Initialize the logger functionality to capture the progress of the execution</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="src.utils.list_to_reason">
+<span class="sig-prename descclassname"><span class="pre">src.utils.</span></span><span class="sig-name descname"><span class="pre">list_to_reason</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">exception_list</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/utils.html#list_to_reason"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.utils.list_to_reason" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>List to Reason</em></p>
+<p>Raise an exception list</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="src.utils.to_dict">
+<span class="sig-prename descclassname"><span class="pre">src.utils.</span></span><span class="sig-name descname"><span class="pre">to_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">index</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/src/utils.html#to_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#src.utils.to_dict" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>To dict</em></p>
+</dd></dl>
+
+</section>
+</section>
+<section id="unit-testing-documentation">
+<h1>Unit Testing Documentation<a class="headerlink" href="#unit-testing-documentation" title="Permalink to this headline">¶</a></h1>
+<div class="toctree-wrapper compound">
+</div>
+<section id="module-test.test_data">
+<span id="data-test"></span><h2>Data Test<a class="headerlink" href="#module-test.test_data" title="Permalink to this headline">¶</a></h2>
+<span class="target" id="module-6"></span><dl class="py class">
+<dt class="sig sig-object py" id="test.test_data.DataTest">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">test.test_data.</span></span><span class="sig-name descname"><span class="pre">DataTest</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">methodName</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'runTest'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/test/test_data.html#DataTest"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#test.test_data.DataTest" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>Data Test</em></p>
+<p>This class defines the unitary test for the input data instance of scheduler</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="test.test_data.DataTest.test_connectivity">
+<span class="sig-name descname"><span class="pre">test_connectivity</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/test/test_data.html#DataTest.test_connectivity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#test.test_data.DataTest.test_connectivity" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>Test Connectivity of the plant configuration</em></p>
+<p>Test if the equipment of the plant configuration is connected to the rest of the equipment of the workflow</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="test.test_data.DataTest.test_consistency">
+<span class="sig-name descname"><span class="pre">test_consistency</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/test/test_data.html#DataTest.test_consistency"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#test.test_data.DataTest.test_consistency" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>Test consistency of the workflows</em></p>
+<p>Test if the workflows defined are consistent</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="test.test_data.DataTest.test_data_input">
+<span class="sig-name descname"><span class="pre">test_data_input</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/test/test_data.html#DataTest.test_data_input"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#test.test_data.DataTest.test_data_input" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>Test Data Input</em></p>
+<p>Test if some input data instances are feasible plant configuration for the scheduler engine</p>
+<dl class="simple">
+<dt>Input data instances:</dt><dd><ul class="simple">
+<li><p>example_test_1.json</p></li>
+<li><p>example_test_2.json</p></li>
+<li><p>example_test_3.json</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="test.test_data.DataTest.test_feasible_time_horizon">
+<span class="sig-name descname"><span class="pre">test_feasible_time_horizon</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/test/test_data.html#DataTest.test_feasible_time_horizon"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#test.test_data.DataTest.test_feasible_time_horizon" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>Test feasible time horizon</em></p>
+<p>Test if the time horizon provided is feasible to allocate the longest schedule</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-test.test_engine">
+<span id="engine-test"></span><h2>Engine Test<a class="headerlink" href="#module-test.test_engine" title="Permalink to this headline">¶</a></h2>
+<span class="target" id="module-7"></span><dl class="py class">
+<dt class="sig sig-object py" id="test.test_engine.EngineTest">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">test.test_engine.</span></span><span class="sig-name descname"><span class="pre">EngineTest</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">methodName</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'runTest'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/test/test_engine.html#EngineTest"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#test.test_engine.EngineTest" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>Engine Test</em></p>
+<p>This class defines the unitary test for the engine scheduler</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="test.test_engine.EngineTest.test_engine">
+<span class="sig-name descname"><span class="pre">test_engine</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/test/test_engine.html#EngineTest.test_engine"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#test.test_engine.EngineTest.test_engine" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>Test engine</em></p>
+<p>Test scheduler engine with different input plant configurations. Check that the output schedule fulfill the
+expected functionalities.</p>
+<dl class="simple">
+<dt>Input data instances:</dt><dd><ul class="simple">
+<li><p>example_test_1.json</p></li>
+<li><p>example_test_2.json</p></li>
+<li><p>example_test_3.json</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+<section id="indices-and-tables">
+<h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h1>
+<ul class="simple">
+<li><p><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></p></li>
+<li><p><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></p></li>
+<li><p><a class="reference internal" href="search.html"><span class="std std-ref">Search Page</span></a></p></li>
+</ul>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="#">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">GEA Schedeus - Scheduler Documentation - V.0.1</a></li>
+<li><a class="reference internal" href="#scheduler-module-documentation">Scheduler Module Documentation</a><ul>
+<li><a class="reference internal" href="#module-src.model_data">Model Data</a></li>
+<li><a class="reference internal" href="#module-src.scheduler_response">Scheduler Response</a></li>
+<li><a class="reference internal" href="#module-src.engine">Scheduler Engine</a></li>
+<li><a class="reference internal" href="#module-src.model_data_factory">Model Data Factory</a></li>
+<li><a class="reference internal" href="#module-src.scheduler_response_factory">Scheduler Response Factory</a></li>
+<li><a class="reference internal" href="#module-src.utils">Utils</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#unit-testing-documentation">Unit Testing Documentation</a><ul>
+<li><a class="reference internal" href="#module-test.test_data">Data Test</a></li>
+<li><a class="reference internal" href="#module-test.test_engine">Engine Test</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#indices-and-tables">Indices and tables</a></li>
+</ul>
+
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/index.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="#">GEA v.0.1 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">GEA Schedeus - Scheduler Documentation - V.0.1</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2022, Capgemini Engineering - Hybrid Intelligence.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 4.3.1.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,541 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>src.engine &#8212; GEA v.0.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/pyramid.css" />
+    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/jquery.js"></script>
+    <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<!--[if lte IE 6]>
+<link rel="stylesheet" href="../../_static/ie6.css" type="text/css" media="screen" charset="utf-8" />
+<![endif]-->
+
+  </head><body>
+
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">GEA v.0.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">src.engine</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for src.engine</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">.. module:: src.engine</span>
+<span class="sd">   :synopsis: This class defines the scheduler optimization engine.</span>
+
+<span class="sd">.. moduleauthor:: (C) Capgemini Engineering - Hybrid Intelligence 2022</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">shutil</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">os.path</span>
+<span class="kn">import</span> <span class="nn">traceback</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">ortools.sat.python</span> <span class="kn">import</span> <span class="n">cp_model</span>
+
+<span class="kn">from</span> <span class="nn">pandas</span> <span class="kn">import</span> <span class="n">DataFrame</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">matplotlib</span> <span class="k">as</span> <span class="nn">mpl</span>
+
+<span class="kn">from</span> <span class="nn">src.model_data</span> <span class="kn">import</span> <span class="n">ModelData</span>
+<span class="kn">from</span> <span class="nn">src.model_data_factory</span> <span class="kn">import</span> <span class="n">ModelDataFactory</span>
+<span class="kn">from</span> <span class="nn">src.scheduler_response_factory</span> <span class="kn">import</span> <span class="n">SchedulerResponseFactory</span>
+<span class="kn">from</span> <span class="nn">src.constants</span> <span class="kn">import</span> <span class="n">EPSILON</span><span class="p">,</span> <span class="n">PRECISION</span>
+
+
+<div class="viewcode-block" id="SchedulerEngine"><a class="viewcode-back" href="../../index.html#src.engine.SchedulerEngine">[docs]</a><span class="k">class</span> <span class="nc">SchedulerEngine</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        *Scheduler Engine*</span>
+
+<span class="sd">        This class defines the scheduler optimization engine.</span>
+
+<span class="sd">              Attributes:</span>
+<span class="sd">                  results:     Results of the pyomo execution.</span>
+
+<span class="sd">                  name:        Name of the model.</span>
+
+<span class="sd">                  data:        Model data instance.</span>
+
+<span class="sd">                  response:    Scheduler instance.</span>
+<span class="sd">              &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">ModelData</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">data</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">cp_model</span><span class="o">.</span><span class="n">CpModel</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">results</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">response</span> <span class="o">=</span> <span class="kc">None</span>
+
+<div class="viewcode-block" id="SchedulerEngine.execute"><a class="viewcode-back" href="../../index.html#src.engine.SchedulerEngine.execute">[docs]</a>    <span class="k">def</span> <span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        *Execute*</span>
+
+<span class="sd">        This method execute the engine module which comprise the following sub-methods:</span>
+
+<span class="sd">            * Data Analyzer: Check the integrity of the input data instance.</span>
+
+<span class="sd">            * Build Model: Build the engine scheduler model.</span>
+
+<span class="sd">            * Solve: Solve the optimziation model.</span>
+
+<span class="sd">            * Build Solution: Invoke the scheduler data factory to build the schedule output solution</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__check_data</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__build_model</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__solve</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__build_solution</span><span class="p">()</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">Scheduling completed!&#39;</span><span class="p">)</span>
+
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;There was an error running the Scheduling engine&#39;</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">__check_data</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        check data integrity</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__check_data_method_1</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Data error: </span><span class="si">{err}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">err</span><span class="o">=</span><span class="n">err</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">raise</span>
+
+    <span class="k">def</span> <span class="nf">__solve</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        solve model</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Solving Scheduling...&#39;</span><span class="p">)</span>
+
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span>
+                <span class="s2">&quot;Error Solving Scheduling: </span><span class="si">{err}</span><span class="se">\n</span><span class="si">{traceback}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">err</span><span class="o">=</span><span class="n">err</span><span class="p">,</span>
+                                                                      <span class="n">traceback</span><span class="o">=</span><span class="n">traceback</span><span class="o">.</span><span class="n">format_exc</span><span class="p">()))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">results</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">raise</span>
+
+    <span class="k">def</span> <span class="nf">__build_solution</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">response</span> <span class="o">=</span> <span class="n">SchedulerResponseFactory</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">)</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__has_solution</span><span class="p">()</span> <span class="k">else</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="nf">__build_model</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Building Scheduler model...&#39;</span><span class="p">)</span>
+        <span class="n">start</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__build_batches</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__build_sets</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__build_parameters</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__build_variables</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__build_expressions</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__build_constraints</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__build_objective</span><span class="p">()</span>
+
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span>
+                <span class="s2">&quot;Error building Scheduler model: </span><span class="si">{err}</span><span class="se">\n</span><span class="si">{traceback}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="n">err</span><span class="o">=</span><span class="n">err</span><span class="p">,</span> <span class="n">traceback</span><span class="o">=</span><span class="n">traceback</span><span class="o">.</span><span class="n">format_exc</span><span class="p">()))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">raise</span>
+
+        <span class="n">end</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;done! It took </span><span class="si">{time}</span><span class="s1"> seconds</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="n">time</span><span class="o">=</span><span class="nb">round</span><span class="p">(</span><span class="n">end</span> <span class="o">-</span> <span class="n">start</span><span class="p">,</span> <span class="mi">3</span><span class="p">)))</span>
+
+    <span class="k">def</span> <span class="nf">__build_batches</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">demands</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">get_demands</span><span class="p">()</span>
+        <span class="n">equipments</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">get_equipments</span><span class="p">()</span>
+        <span class="n">workflows</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">get_workflows</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">B_min</span> <span class="o">=</span> <span class="p">{(</span><span class="n">k</span><span class="p">,</span> <span class="n">j</span><span class="p">[</span><span class="s1">&#39;product_name&#39;</span><span class="p">]):</span> <span class="n">d</span><span class="p">[</span><span class="s1">&#39;min_volume&#39;</span><span class="p">]</span>
+                      <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">workflows</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">i</span><span class="p">[</span><span class="s1">&#39;equipments&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span>
+                      <span class="n">demands</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">equipments</span> <span class="k">if</span> <span class="n">d</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span> <span class="ow">in</span> <span class="n">k</span>
+                      <span class="p">}</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">B_max</span> <span class="o">=</span> <span class="p">{(</span><span class="n">k</span><span class="p">,</span> <span class="n">j</span><span class="p">[</span><span class="s1">&#39;product_name&#39;</span><span class="p">]):</span> <span class="n">d</span><span class="p">[</span><span class="s1">&#39;max_volume&#39;</span><span class="p">]</span>
+                      <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">workflows</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">i</span><span class="p">[</span><span class="s1">&#39;equipments&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span>
+                      <span class="n">demands</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">equipments</span> <span class="k">if</span> <span class="n">d</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span> <span class="ow">in</span> <span class="n">k</span>
+                      <span class="p">}</span>
+        <span class="n">lower_bound</span> <span class="o">=</span> <span class="p">{</span><span class="n">j</span><span class="p">[</span><span class="s1">&#39;product_name&#39;</span><span class="p">]:</span> <span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">j</span><span class="p">[</span><span class="s1">&#39;amount&#39;</span><span class="p">]</span> <span class="o">/</span>
+                                                  <span class="nb">max</span><span class="p">((</span><span class="n">k1</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="p">(</span><span class="n">k1</span><span class="p">,</span> <span class="n">k2</span><span class="p">),</span> <span class="n">v</span>
+                                                      <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">B_max</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+                                                      <span class="k">if</span>
+                                                      <span class="n">k2</span> <span class="o">==</span> <span class="n">j</span><span class="p">[</span><span class="s1">&#39;product_name&#39;</span><span class="p">])[</span>
+                                                      <span class="mi">1</span><span class="p">])</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">demands</span><span class="p">}</span>
+        <span class="n">upper_bound</span> <span class="o">=</span> <span class="p">{</span><span class="n">j</span><span class="p">[</span><span class="s1">&#39;product_name&#39;</span><span class="p">]:</span> <span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">j</span><span class="p">[</span><span class="s1">&#39;amount&#39;</span><span class="p">]</span> <span class="o">/</span>
+                                                  <span class="nb">min</span><span class="p">((</span><span class="n">k1</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="p">(</span><span class="n">k1</span><span class="p">,</span> <span class="n">k2</span><span class="p">),</span> <span class="n">v</span>
+                                                      <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">B_min</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+                                                      <span class="k">if</span>
+                                                      <span class="n">k2</span> <span class="o">==</span> <span class="n">j</span><span class="p">[</span><span class="s1">&#39;product_name&#39;</span><span class="p">])[</span>
+                                                      <span class="mi">1</span><span class="p">])</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">demands</span><span class="p">}</span>
+        <span class="c1"># EN EL UPPER BOUND VA A HABER PROBLEMAS SI EL MINIMO ES 0, HAY QUE</span>
+        <span class="c1"># AÑADIR ALGUNA EXCEPCIÓN.</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">N</span> <span class="o">=</span> <span class="p">{</span><span class="n">j</span><span class="p">[</span><span class="s1">&#39;product_name&#39;</span><span class="p">]:</span>
+                      <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">((</span><span class="n">upper_bound</span><span class="p">[</span><span class="n">j</span><span class="p">[</span><span class="s1">&#39;product_name&#39;</span><span class="p">]]</span> <span class="o">+</span>
+                                   <span class="n">lower_bound</span><span class="p">[</span><span class="n">j</span><span class="p">[</span><span class="s1">&#39;product_name&#39;</span><span class="p">]])</span> <span class="o">/</span> <span class="mi">2</span><span class="p">))</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span>
+                  <span class="n">demands</span><span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">demand_amounts</span> <span class="o">=</span> <span class="p">{</span><span class="n">j</span><span class="p">[</span><span class="s1">&#39;product_name&#39;</span><span class="p">]:</span>
+                                   <span class="n">j</span><span class="p">[</span><span class="s1">&#39;amount&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">demands</span><span class="p">}</span>
+        <span class="nb">print</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">demand_amounts</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__build_sets</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Los índices en principio son sobre los subprocesos, sobre los batches, </span>
+<span class="sd">        sobre los productos y workflows</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">equipments</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">get_equipments</span><span class="p">()</span>
+        <span class="n">workflows</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">get_workflows</span><span class="p">()</span>
+        <span class="n">products</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">get_products</span><span class="p">()</span>
+        <span class="n">demands</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">get_demands</span><span class="p">()</span>
+        <span class="n">cips</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">get_cips</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">SUBPROCESS</span> <span class="o">=</span> <span class="p">[(</span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">],</span> <span class="n">j</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">equipments</span>
+                                 <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">i</span><span class="p">[</span><span class="s1">&#39;subprocess&#39;</span><span class="p">]]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">OUTPUT_PRODUCTS</span> <span class="o">=</span> <span class="p">[</span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;product_name&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">demands</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">BATCHES</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="nb">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">N</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span>
+        <span class="c1"># Workflows y output products son 1:1 en este modelo V0</span>
+
+    <span class="k">def</span> <span class="nf">__build_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">workflows</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">get_workflows</span><span class="p">()</span>
+        <span class="n">equipments</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">get_equipments</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">time_horizon</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mf">1e6</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">time_start</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="c1"># Volumen de un batch del producto p</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">V</span> <span class="o">=</span> <span class="p">{</span><span class="n">p</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">demand_amounts</span><span class="p">[</span><span class="n">p</span><span class="p">]</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">N</span><span class="p">[</span><span class="n">p</span><span class="p">]))</span>
+                        <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">OUTPUT_PRODUCTS</span><span class="p">}</span>
+
+        <span class="c1"># Volumen maximo del subproceso j</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">MAX_V</span> <span class="o">=</span> <span class="p">{(</span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">],</span> <span class="n">j</span><span class="p">):</span> <span class="n">i</span><span class="p">[</span><span class="s1">&#39;max_volume&#39;</span><span class="p">]</span>
+                            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">equipments</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">i</span><span class="p">[</span><span class="s1">&#39;subprocess&#39;</span><span class="p">]}</span>
+
+        <span class="c1"># Duración del subproceso</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">D_SUBPROCESS</span> <span class="o">=</span> <span class="p">{(</span><span class="n">p</span><span class="p">,</span> <span class="n">m</span><span class="p">):</span> <span class="mi">0</span>
+                                   <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">OUTPUT_PRODUCTS</span>
+                                   <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">SUBPROCESS</span><span class="p">}</span>
+        <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">workflows</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;nodes&#39;</span><span class="p">]:</span>
+                <span class="k">if</span> <span class="n">n</span><span class="p">[</span><span class="s1">&#39;duration_type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;variable&#39;</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">D_SUBPROCESS</span><span class="p">[</span><span class="n">p</span><span class="p">[</span><span class="s1">&#39;output_product&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="p">(</span>
+                        <span class="n">n</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">],</span> <span class="n">n</span><span class="p">[</span><span class="s1">&#39;subprocess&#39;</span><span class="p">])]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">NewIntVar</span><span class="p">(</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">time_start</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">time_horizon</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">n</span><span class="p">[</span><span class="s1">&#39;duration_type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;fixed&#39;</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">D_SUBPROCESS</span><span class="p">[</span><span class="n">p</span><span class="p">[</span><span class="s1">&#39;output_product&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span>
+                                            <span class="p">(</span><span class="n">n</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">],</span> <span class="n">n</span><span class="p">[</span><span class="s1">&#39;subprocess&#39;</span><span class="p">])]</span> <span class="o">=</span> <span class="n">n</span><span class="p">[</span><span class="s1">&#39;duration&#39;</span><span class="p">]</span>
+
+        <span class="c1"># Duracion de la conexión del subproceso m a n</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">D_CONNECTIONS</span> <span class="o">=</span> <span class="p">{(</span><span class="n">p</span><span class="p">,</span> <span class="n">m</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span> <span class="mi">0</span>
+                                    <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">OUTPUT_PRODUCTS</span>
+                                    <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">SUBPROCESS</span>
+                                    <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">SUBPROCESS</span><span class="p">}</span>
+
+        <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">workflows</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;edges&#39;</span><span class="p">]:</span>
+                <span class="k">if</span> <span class="n">n</span><span class="p">[</span><span class="s1">&#39;flow&#39;</span><span class="p">]:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">D_CONNECTIONS</span><span class="p">[</span><span class="n">p</span><span class="p">[</span><span class="s1">&#39;output_product&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span>
+                                             <span class="p">(</span><span class="n">n</span><span class="p">[</span><span class="s1">&#39;name_origin&#39;</span><span class="p">],</span> <span class="n">n</span><span class="p">[</span><span class="s1">&#39;subprocess_origin&#39;</span><span class="p">]),</span>
+                                             <span class="p">(</span><span class="n">n</span><span class="p">[</span><span class="s1">&#39;name_destination&#39;</span><span class="p">],</span> <span class="n">n</span><span class="p">[</span><span class="s1">&#39;subprocess_destination&#39;</span><span class="p">])]</span> <span class="o">=</span> \
+                        <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">V</span><span class="p">[</span><span class="n">p</span><span class="p">[</span><span class="s1">&#39;output_product&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]]</span> <span class="o">/</span> <span class="n">n</span><span class="p">[</span><span class="s1">&#39;flowrate&#39;</span><span class="p">]))</span>
+                    <span class="c1"># TRABAJA SOBRE LOS ENTEROS, ESTO DA PROBLEMAS</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">n</span><span class="p">[</span><span class="s1">&#39;flow&#39;</span><span class="p">]:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">D_CONNECTIONS</span><span class="p">[</span><span class="n">p</span><span class="p">[</span><span class="s1">&#39;output_product&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span>
+                                             <span class="p">(</span><span class="n">n</span><span class="p">[</span><span class="s1">&#39;name_origin&#39;</span><span class="p">],</span> <span class="n">n</span><span class="p">[</span><span class="s1">&#39;subprocess_origin&#39;</span><span class="p">]),</span>
+                                             <span class="p">(</span><span class="n">n</span><span class="p">[</span><span class="s1">&#39;name_destination&#39;</span><span class="p">],</span> <span class="n">n</span><span class="p">[</span><span class="s1">&#39;subprocess_destination&#39;</span><span class="p">])]</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="c1"># Delay de la conexión de m a n</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">R</span> <span class="o">=</span> <span class="p">{(</span><span class="n">p</span><span class="p">,</span> <span class="n">m</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span> <span class="mi">0</span>
+                        <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">OUTPUT_PRODUCTS</span>
+                        <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">SUBPROCESS</span>
+                        <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">SUBPROCESS</span><span class="p">}</span>
+
+        <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">workflows</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;edges&#39;</span><span class="p">]:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">R</span><span class="p">[</span><span class="n">p</span><span class="p">[</span><span class="s1">&#39;output_product&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span>
+                             <span class="p">(</span><span class="n">n</span><span class="p">[</span><span class="s1">&#39;name_origin&#39;</span><span class="p">],</span>
+                              <span class="n">n</span><span class="p">[</span><span class="s1">&#39;subprocess_origin&#39;</span><span class="p">]),</span>
+                             <span class="p">(</span><span class="n">n</span><span class="p">[</span><span class="s1">&#39;name_destination&#39;</span><span class="p">],</span>
+                              <span class="n">n</span><span class="p">[</span><span class="s1">&#39;subprocess_destination&#39;</span><span class="p">])]</span> <span class="o">=</span> <span class="n">n</span><span class="p">[</span><span class="s1">&#39;delay&#39;</span><span class="p">]</span>
+
+        <span class="c1"># Grafo de dependencias</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">G</span> <span class="o">=</span> <span class="p">{(</span><span class="n">p</span><span class="p">,</span> <span class="n">m</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span> <span class="kc">None</span>
+                        <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">OUTPUT_PRODUCTS</span>
+                        <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">SUBPROCESS</span>
+                        <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">SUBPROCESS</span><span class="p">}</span>
+
+        <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">workflows</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;edges&#39;</span><span class="p">]:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">G</span><span class="p">[</span><span class="n">p</span><span class="p">[</span><span class="s1">&#39;output_product&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span>
+                             <span class="p">(</span><span class="n">n</span><span class="p">[</span><span class="s1">&#39;name_origin&#39;</span><span class="p">],</span>
+                              <span class="n">n</span><span class="p">[</span><span class="s1">&#39;subprocess_origin&#39;</span><span class="p">]),</span>
+                             <span class="p">(</span><span class="n">n</span><span class="p">[</span><span class="s1">&#39;name_destination&#39;</span><span class="p">],</span>
+                              <span class="n">n</span><span class="p">[</span><span class="s1">&#39;subprocess_destination&#39;</span><span class="p">])]</span> <span class="o">=</span> <span class="n">n</span><span class="p">[</span><span class="s1">&#39;connection&#39;</span><span class="p">]</span>
+
+        <span class="c1"># Matriz que indica si 2 subprocesos son del mismo equipo</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">P</span> <span class="o">=</span> <span class="p">{(</span><span class="n">m</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">m</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">n</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">else</span> <span class="mi">0</span>
+                        <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">SUBPROCESS</span>
+                        <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">SUBPROCESS</span><span class="p">}</span>
+
+    <span class="k">def</span> <span class="nf">__build_variables</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># Indica a que producto pertenece el batch i</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">A</span> <span class="o">=</span> <span class="p">{(</span><span class="n">i</span><span class="p">,</span> <span class="n">p</span><span class="p">):</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">NewBoolVar</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+                        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">BATCHES</span>
+                        <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">OUTPUT_PRODUCTS</span><span class="p">}</span>
+
+        <span class="c1"># Variable de inicio de subproceso</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">S</span> <span class="o">=</span> <span class="p">{(</span><span class="n">i</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">NewIntVar</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">time_start</span><span class="p">,</span>
+                                                     <span class="bp">self</span><span class="o">.</span><span class="n">time_horizon</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+                        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">BATCHES</span>
+                        <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">SUBPROCESS</span><span class="p">}</span>
+
+        <span class="c1"># Variable de fin de subproceso</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">E</span> <span class="o">=</span> <span class="p">{(</span><span class="n">i</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">NewIntVar</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">time_start</span><span class="p">,</span>
+                                                     <span class="bp">self</span><span class="o">.</span><span class="n">time_horizon</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+                        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">BATCHES</span>
+                        <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">SUBPROCESS</span><span class="p">}</span>
+
+        <span class="c1"># Variable indicadora</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">D_I</span> <span class="o">=</span> <span class="p">{(</span><span class="n">i</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">NewIntVar</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">time_start</span><span class="p">,</span>
+                                                       <span class="bp">self</span><span class="o">.</span><span class="n">time_horizon</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+                          <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">BATCHES</span>
+                          <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">SUBPROCESS</span><span class="p">}</span>
+
+        <span class="c1"># Variable de duración máxima de un batch</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">D_MAX</span> <span class="o">=</span> <span class="p">{(</span><span class="n">i</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">NewIntVar</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">time_start</span><span class="p">,</span>
+                                                         <span class="bp">self</span><span class="o">.</span><span class="n">time_horizon</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+                            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">BATCHES</span>
+                            <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">SUBPROCESS</span><span class="p">}</span>
+
+        <span class="c1"># Variable de intervalo de batches</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">B</span> <span class="o">=</span> <span class="p">{(</span><span class="n">i</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">NewIntervalVar</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">S</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">n</span><span class="p">],</span>
+                                                          <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">D_MAX</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">n</span><span class="p">],</span>
+                                                          <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">E</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">n</span><span class="p">],</span>
+                                                          <span class="s1">&#39;&#39;</span><span class="p">)</span>
+                        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">BATCHES</span>
+                        <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">SUBPROCESS</span><span class="p">}</span>
+
+        <span class="c1"># Variable que transforma de volumen por producto a volumen por indice de batch</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">V_FROM_P_TO_I</span> <span class="o">=</span> <span class="p">{</span><span class="n">i</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">NewIntVar</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span>
+                                                            <span class="nb">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">V</span><span class="o">.</span><span class="n">values</span><span class="p">()),</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+                                    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">BATCHES</span><span class="p">}</span>
+
+        <span class="c1"># Variable que indica donde puede empezar el volumen</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">V_START</span> <span class="o">=</span> <span class="p">{(</span><span class="n">i</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">NewIntVar</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span>
+                                                           <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">MAX_V</span><span class="p">[</span><span class="n">n</span><span class="p">],</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+                              <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">BATCHES</span>
+                              <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">SUBPROCESS</span><span class="p">}</span>
+
+        <span class="c1"># Variable que indica donde puede acabar el volumen</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">V_END</span> <span class="o">=</span> <span class="p">{(</span><span class="n">i</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">NewIntVar</span><span class="p">(</span>
+            <span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">MAX_V</span><span class="p">[</span><span class="n">n</span><span class="p">],</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">BATCHES</span>
+            <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">SUBPROCESS</span><span class="p">}</span>
+
+        <span class="c1"># Variable de intervalo del volumen</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">V_INTERVAL</span> <span class="o">=</span> <span class="p">{(</span><span class="n">i</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">NewIntervalVar</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">V_START</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">n</span><span class="p">],</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">V_FROM_P_TO_I</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">V_END</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">n</span><span class="p">],</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">BATCHES</span>
+            <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">SUBPROCESS</span><span class="p">}</span>
+
+        <span class="c1"># Variable indicadora</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">A_I</span> <span class="o">=</span> <span class="p">{(</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">p</span><span class="p">):</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">NewBoolVar</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+                          <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">BATCHES</span>
+                          <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">BATCHES</span>
+                          <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">OUTPUT_PRODUCTS</span><span class="p">}</span>
+
+    <span class="k">def</span> <span class="nf">__build_expressions</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;build expressions&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__build_constraints</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;&quot;</span>
+<span class="sd">        Agrupar todos los bucles posibles para mejorar performance.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">BATCHES</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="nb">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">A</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">p</span><span class="p">]</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span>
+                               <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">OUTPUT_PRODUCTS</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">OUTPUT_PRODUCTS</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="nb">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">A</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">p</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span>
+                               <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">BATCHES</span><span class="p">)</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">N</span><span class="p">[</span><span class="n">p</span><span class="p">])</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">BATCHES</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">SUBPROCESS</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">OUTPUT_PRODUCTS</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">AddMaxEquality</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">D_I</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">m</span><span class="p">],</span>
+                                              <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">D_CONNECTIONS</span><span class="p">[</span><span class="n">p</span><span class="p">,</span> <span class="n">m</span><span class="p">,</span> <span class="n">l</span><span class="p">]</span>
+                                               <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">SUBPROCESS</span><span class="p">])</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">D_MAX</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">m</span><span class="p">]</span> <span class="o">==</span>
+                                   <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">D_I</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">m</span><span class="p">])</span><span class="o">.</span><span class="n">OnlyEnforceIf</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">A</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">p</span><span class="p">])</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">BATCHES</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">SUBPROCESS</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">SUBPROCESS</span><span class="p">:</span>
+                    <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">OUTPUT_PRODUCTS</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">G</span><span class="p">[</span><span class="n">p</span><span class="p">,</span> <span class="n">m</span><span class="p">,</span> <span class="n">n</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;FS&#39;</span><span class="p">:</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">S</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">n</span><span class="p">]</span> <span class="o">==</span>
+                                           <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">S</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">m</span><span class="p">]</span> <span class="o">+</span>
+                                           <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">D_SUBPROCESS</span><span class="p">[</span><span class="n">p</span><span class="p">,</span> <span class="n">m</span><span class="p">]</span> <span class="o">+</span>
+                                           <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">D_CONNECTIONS</span><span class="p">[</span><span class="n">p</span><span class="p">,</span> <span class="n">m</span><span class="p">,</span> <span class="n">n</span><span class="p">]</span> <span class="o">+</span>
+                                           <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">R</span><span class="p">[</span><span class="n">p</span><span class="p">,</span> <span class="n">m</span><span class="p">,</span> <span class="n">n</span><span class="p">])</span><span class="o">.</span><span class="n">OnlyEnforceIf</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">A</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">p</span><span class="p">])</span>
+                        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">G</span><span class="p">[</span><span class="n">p</span><span class="p">,</span> <span class="n">m</span><span class="p">,</span> <span class="n">n</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;SS&#39;</span><span class="p">:</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">S</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">n</span><span class="p">]</span> <span class="o">==</span>
+                                           <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">S</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">m</span><span class="p">]</span> <span class="o">+</span>
+                                           <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">R</span><span class="p">[</span><span class="n">p</span><span class="p">,</span> <span class="n">m</span><span class="p">,</span> <span class="n">n</span><span class="p">])</span><span class="o">.</span><span class="n">OnlyEnforceIf</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">A</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">p</span><span class="p">])</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">BATCHES</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">BATCHES</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">OUTPUT_PRODUCTS</span><span class="p">:</span>
+                    <span class="c1"># x and y implies p, rewrite as not(x and y) or p</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">AddBoolOr</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">A</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">p</span><span class="p">],</span>
+                                          <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">A</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="n">p</span><span class="p">]</span><span class="o">.</span><span class="n">Not</span><span class="p">(),</span>
+                                          <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">A_I</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">p</span><span class="p">]])</span>
+
+                    <span class="c1"># p implies x and y, expanded into two implication</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">AddImplication</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">A_I</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">p</span><span class="p">],</span>
+                                              <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">A</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">p</span><span class="p">]</span><span class="o">.</span><span class="n">Not</span><span class="p">())</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">AddImplication</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">A_I</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">p</span><span class="p">],</span>
+                                              <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">A</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="n">p</span><span class="p">])</span>
+
+        <span class="c1"># for i in self.model.BATCHES:</span>
+        <span class="c1">#     for j in self.model.BATCHES:</span>
+        <span class="c1">#         if j &lt; i:</span>
+        <span class="c1">#             for m in self.model.SUBPROCESS:</span>
+        <span class="c1">#                 for n in self.model.SUBPROCESS:</span>
+        <span class="c1">#                     if self.model.P[m, n] == 1:</span>
+        <span class="c1">#                         for l in self.model.SUBPROCESS:</span>
+        <span class="c1">#                             for p in self.model.OUTPUT_PRODUCTS:</span>
+        <span class="c1">#                                 self.model.Add(self.model.S[i, n] &gt;=</span>
+        <span class="c1">#                                                self.model.S[j, m] +</span>
+        <span class="c1">#                                                self.model.D_SUBPROCESS[p, m] +</span>
+        <span class="c1">#                                                self.model.D_CONNECTIONS[p, m, l]).OnlyEnforceIf(</span>
+        <span class="c1">#                                     self.model.A_I[i, j, p]</span>
+        <span class="c1">#                                 )</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">BATCHES</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">OUTPUT_PRODUCTS</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">V_FROM_P_TO_I</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">==</span>
+                               <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">V</span><span class="p">[</span><span class="n">p</span><span class="p">])</span><span class="o">.</span><span class="n">OnlyEnforceIf</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">A</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">p</span><span class="p">])</span>
+
+        <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">SUBPROCESS</span><span class="p">:</span>
+            <span class="n">list_of_volume_variables_over_i</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">list_of_time_variables_over_i</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">BATCHES</span><span class="p">:</span>
+                <span class="n">list_of_volume_variables_over_i</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">V_INTERVAL</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">n</span><span class="p">]</span>
+                <span class="p">)</span>
+                <span class="n">list_of_time_variables_over_i</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">B</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">n</span><span class="p">]</span>
+                <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">AddNoOverlap2D</span><span class="p">(</span><span class="n">list_of_time_variables_over_i</span><span class="p">,</span>
+                                      <span class="n">list_of_volume_variables_over_i</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__build_objective</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># maximum time to minimize:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">MAX_E</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">NewIntVar</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">time_start</span><span class="p">,</span>
+                                                <span class="bp">self</span><span class="o">.</span><span class="n">time_horizon</span><span class="p">,</span>
+                                                <span class="s1">&#39;&#39;</span><span class="p">)</span>
+        <span class="c1"># Equal max_E with the maximum of the E variables</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">AddMaxEquality</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">MAX_E</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">E</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+        <span class="c1"># minimize the largest ending time</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">Minimize</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">MAX_E</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">solver</span> <span class="o">=</span> <span class="n">cp_model</span><span class="o">.</span><span class="n">CpSolver</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">solver</span><span class="o">.</span><span class="n">Solve</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__check_data_method_1</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check data method</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Check data&#39;</span><span class="p">)</span>
+
+        <span class="k">except</span> <span class="ne">KeyError</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s1">&#39;</span><span class="si">{key}</span><span class="s1"> from Movements is not defined in Transports&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="n">key</span><span class="o">=</span><span class="n">err</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">__has_solution</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">status</span> <span class="o">==</span> <span class="n">cp_model</span><span class="o">.</span><span class="n">OPTIMAL</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">status</span> <span class="o">==</span> <span class="n">cp_model</span><span class="o">.</span><span class="n">FEASIBLE</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Objective function value: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">solver</span><span class="o">.</span><span class="n">ObjectiveValue</span><span class="p">()</span><span class="si">}</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+            <span class="n">df</span> <span class="o">=</span> <span class="n">DataFrame</span><span class="p">({</span>
+                <span class="s1">&#39;Start Empty&#39;</span><span class="p">:</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">solver</span><span class="o">.</span><span class="n">Value</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">S</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="s1">&#39;Tank A&#39;</span><span class="p">,</span> <span class="s1">&#39;Emptying&#39;</span><span class="p">)])</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span>
+                                <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">BATCHES</span><span class="p">],</span>
+                <span class="s1">&#39;Start Fill&#39;</span><span class="p">:</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">solver</span><span class="o">.</span><span class="n">Value</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">S</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="s1">&#39;Tank B&#39;</span><span class="p">,</span> <span class="s1">&#39;Filling&#39;</span><span class="p">)])</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span>
+                               <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">BATCHES</span><span class="p">]</span>
+            <span class="p">})</span>
+
+            <span class="nb">print</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">SUBPROCESS</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+            <span class="nb">print</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">D_CONNECTIONS</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;No solution found.&#39;</span><span class="p">)</span></div>
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">GEA v.0.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">src.engine</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2022, Capgemini Engineering - Hybrid Intelligence.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 4.3.1.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,41 @@
+{
+  "ScheduleName": "name",
+  "ScheduleID": "jgfkg38",
+  "ScheduleGantt" : [
+  {
+    "name": "Crystallization tank 241TA1100",
+    "id": "123ABC",
+    "percentage_utilization": 58.73,
+    "bottleneck_order": 1,
+    "timetable": [
+      {
+        "subprocess": "Filling",
+        "workflow_name": ["workflow_A"],
+        "workflow_id": [""],
+        "product_name": ["product_A"],
+        "product_id": [""],
+        "start": 340,
+        "end": 1180
+      },
+      {
+        "subprocess": "Emptying",
+        "workflow_name": ["workflow_A"],
+        "workflow_id": [""],
+        "product_name": ["product_A"],
+        "product_id": [""],
+        "start": 1180,
+        "end": 2000
+      },
+      {
+        "subprocess": "Filling",
+        "workflow_name": ["workflow_A"],
+        "workflow_id": [""],
+        "product_name": ["product_A"],
+        "product_id": [""],
+        "start": 2500,
+        "end": 3000
+      }
+    ]
+  }
+]
+}

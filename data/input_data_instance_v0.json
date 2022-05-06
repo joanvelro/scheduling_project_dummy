@@ -1,0 +1,56 @@
+{
+  "PlanningOperations": [
+    {"OperationID": "OP1"},
+    {"OperationID": "OP2"},
+    {"OperationID": "OP3"}
+  ],
+    "PlanningProducts": [
+    {"OperationID": "PA"},
+    {"OperationID": "PB"},
+    {"OperationID": "PC"}
+  ],
+  "WorkFlows": [
+    {
+      "Operation": "OP1",
+      "Product":"PA",
+      "Duration": 1545,
+      "Prec": null
+    },
+      {
+      "Operation": "OP1",
+      "Product":"PB",
+      "Duration": 1440,
+      "Prec": ["OP1", "PA"]
+      },
+    {
+      "Operation": "OP2",
+      "Product":"PC",
+      "Duration": 1021,
+      "Prec": ["OP1", "PB"]
+    },
+      {
+      "Operation": "OP2",
+      "Product":"PB",
+      "Duration": 3412,
+      "Prec": ["OP1", "PA"]
+      },
+    {
+      "Operation": "OP3",
+      "Product":"PA",
+      "Duration": 1332,
+      "Prec": ["OP1", "PB"]
+    },
+      {
+        "Operation": "OP3",
+        "Product":"PC",
+      "Duration": 1732,
+      "Prec": ["OP2", "PA"]
+      },
+     {
+       "Operation": "OP3",
+       "Product":"PC",
+      "Duration": 2532,
+      "Prec": ["OP1", "PA"]
+      }
+  ]
+}
